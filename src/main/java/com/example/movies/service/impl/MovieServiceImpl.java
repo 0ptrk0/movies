@@ -1,8 +1,7 @@
 package com.example.movies.service.impl;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
 import com.example.movies.dto.MovieDTO;
 import com.example.movies.entity.MovieEntity;
 import com.example.movies.exception.MovieNotFoundException;
@@ -13,34 +12,47 @@ import org.springframework.stereotype.Service;
 @Service
 public class MovieServiceImpl implements MovieService {
 
-    private final MovieRepository movieRepository;
-    private final ModelMapper modelMapper;
+    private MovieRepository movieRepository;
+    private ModelMapper modelMapper;
 
     public MovieServiceImpl(MovieRepository movieRepository, ModelMapper modelMapper) {
         this.movieRepository = movieRepository;
         this.modelMapper = modelMapper;
+
+        MovieEntity movieEntity = new MovieEntity();
+        movieEntity.setTitle("Star Wars");
+        movieRepository.save(movieEntity);
     }
 
     @Override
     public List<MovieDTO> findAll() {
-        return movieRepository.findAll()
-                .stream()
-                .map(movie -> modelMapper.map(movie, MovieDTO.class))
-                .collect(Collectors.toList());
+        List<MovieEntity> movies = movieRepository.findAll();
+
+        List<MovieDTO> result = new ArrayList<>();
+
+        for (MovieEntity movieEntity : movies) {
+            MovieDTO movieDTO = modelMapper.map(movieEntity, MovieDTO.class);
+            result.add(movieDTO);
+        }
+
+        return result;
     }
 
     @Override
     public Optional<MovieDTO> findById(Long id) {
-        return movieRepository.findById(id)
-                .map(m -> modelMapper.map(m, MovieDTO.class));
+        Optional<MovieEntity> movieEntityOptional = movieRepository.findById(id);
+
+        Optional<MovieDTO> movieDTO = movieEntityOptional.map(movieEntity -> modelMapper.map(movieEntity, MovieDTO.class));
+
+        return movieDTO;
     }
 
     @Override
-    public MovieDTO create(MovieDTO movieDTO) {
-        movieDTO.setId(null);
+    public MovieDTO save(MovieDTO movieDTO) {
+        MovieEntity movieEntity = modelMapper.map(movieDTO, MovieEntity.class);
+        movieEntity.setId(null);
 
-        MovieEntity movieToSave = modelMapper.map(movieDTO, MovieEntity.class);
-        MovieEntity savedMovie = movieRepository.save(movieToSave);
+        MovieEntity savedMovie = movieRepository.save(movieEntity);
 
         return modelMapper.map(savedMovie, MovieDTO.class);
     }
@@ -48,27 +60,26 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public MovieDTO update(MovieDTO movieDTO) {
         Long id = movieDTO.getId();
-        Optional<MovieEntity> movieToUpdate = movieRepository.findById(id);
 
-        if (movieToUpdate.isEmpty()) {
-            throw new MovieNotFoundException("Movie not found with id=" + id);
+        boolean existsById = movieRepository.existsById(id);
+
+        if (existsById) {
+            MovieEntity movieToSave = modelMapper.map(movieDTO, MovieEntity.class);
+            MovieEntity savedMovie = movieRepository.save(movieToSave);
+            return modelMapper.map(savedMovie, MovieDTO.class);
+        } else {
+            throw new MovieNotFoundException("Movie not found with id " + id);
         }
-
-        MovieEntity movieToPersist = modelMapper.map(movieDTO, MovieEntity.class);
-        MovieEntity savedMovie = movieRepository.save(movieToPersist);
-
-        return modelMapper.map(savedMovie, MovieDTO.class);
     }
 
     @Override
     public void delete(Long id) {
-        Optional<MovieEntity> movieToDelete = movieRepository.findById(id);
+        Optional<MovieEntity> optionalMovie = movieRepository.findById(id);
 
-        if (movieToDelete.isPresent()) {
-            movieRepository.delete(movieToDelete.get());
+        if(optionalMovie.isPresent()){
+            movieRepository.delete(optionalMovie.get());
         } else {
-            throw new MovieNotFoundException("Movie not found with id=" + id);
+            throw new MovieNotFoundException("Movie not found with id " + id);
         }
     }
-
-}}
+}

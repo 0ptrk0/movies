@@ -1,12 +1,7 @@
 package com.example.movies.service;
-
 import java.util.List;
 import java.util.Optional;
-
 import com.example.movies.dto.MovieDTO;
-import com.example.movies.exception.MovieNotFoundException;
-
-/
 public interface MovieService {
 
 
@@ -16,7 +11,7 @@ public interface MovieService {
     Optional<MovieDTO> findById(Long id);
 
 
-    MovieDTO create(MovieDTO movieDTO);
+    MovieDTO save(MovieDTO movieDTO);
 
 
     MovieDTO update(MovieDTO movieDTO);
