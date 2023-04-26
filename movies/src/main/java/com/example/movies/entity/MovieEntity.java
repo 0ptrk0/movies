@@ -2,7 +2,6 @@ package com.example.movies.entity;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.GeneratedValue;
-
 import java.util.Date;
 import java.util.Set;
 
